@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Household Expenses</title>
+<meta name="theme-color" content="#0F766E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Expenses">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root {
+  --bg: #F6F7F9; --surface: #FFFFFF; --ink: #111827; --muted: #6B7280; --line: #E5E7EB;
+  --accent: #0F766E; --accent-ink: #FFFFFF; --accent-soft: #CCFBF1; --warn: #D97706; --bad: #DC2626;
+  --chip: #F1F5F9; --shadow: 0 1px 2px rgba(0,0,0,.05), 0 4px 16px rgba(0,0,0,.05);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0B0F14; --surface: #151B23; --ink: #E5E7EB; --muted: #9CA3AF; --line: #263040;
+    --accent: #2DD4BF; --accent-ink: #062925; --accent-soft: #134E4A; --warn: #F59E0B; --bad: #F87171;
+    --chip: #1F2937; --shadow: none;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0B0F14; --surface: #151B23; --ink: #E5E7EB; --muted: #9CA3AF; --line: #263040;
+  --accent: #2DD4BF; --accent-ink: #062925; --accent-soft: #134E4A; --warn: #F59E0B; --bad: #F87171;
+  --chip: #1F2937; --shadow: none;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); }
+body { font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; padding-bottom: env(safe-area-inset-bottom); }
+button { font: inherit; color: inherit; cursor: pointer; }
+input, textarea { font: inherit; color: var(--ink); }
+[hidden] { display: none !important; }
+.wrap { max-width: 560px; margin: 0 auto; padding: 0 16px; }
+
+header.top { position: sticky; top: 0; z-index: 5; background: var(--bg); padding: calc(10px + env(safe-area-inset-top)) 0 8px; }
+header.top .wrap { display: flex; align-items: center; gap: 10px; }
+header.top h1 { font-size: 18px; margin: 0; flex: 1; }
+header.top h1 small { display: block; font-size: 12px; font-weight: 500; color: var(--muted); }
+.iconbtn { width: 40px; height: 40px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); display: grid; place-items: center; font-size: 18px; }
+.iconbtn.spin { animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.sync { font-size: 12px; padding: 3px 9px; border-radius: 99px; background: var(--chip); color: var(--muted); white-space: nowrap; }
+.sync.ok::before { content: "● "; color: #10B981; }
+.sync.pending { background: #FEF3C7; color: #92400E; }
+.sync.off::before { content: "● "; color: var(--muted); }
+
+.card { background: var(--surface); border-radius: 18px; box-shadow: var(--shadow); border: 1px solid var(--line); padding: 16px; margin: 12px 0; }
+.mode { display: grid; grid-template-columns: 1fr 1fr; background: var(--chip); border-radius: 12px; padding: 4px; gap: 4px; margin-bottom: 14px; }
+.mode button { border: 0; background: transparent; padding: 9px; border-radius: 9px; font-weight: 600; color: var(--muted); }
+.mode button.on { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+
+.amount { display: flex; align-items: baseline; gap: 8px; border-bottom: 2px solid var(--line); padding: 4px 0 8px; margin-bottom: 14px; }
+.amount:focus-within { border-color: var(--accent); }
+.amount span { color: var(--muted); font-weight: 600; }
+.amount input { border: 0; outline: 0; background: transparent; font-size: 40px; font-weight: 700; width: 100%; min-width: 0; font-variant-numeric: tabular-nums; }
+label.lbl { display: block; font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); margin: 14px 0 8px; }
+
+.catgroup { border-top: 1px solid var(--line); }
+.catgroup:first-child { border-top: 0; }
+.catgroup summary { list-style: none; padding: 10px 0; font-size: 13px; font-weight: 600; color: var(--muted); display: flex; justify-content: space-between; }
+.catgroup summary::after { content: "▾"; transition: transform .2s; }
+.catgroup:not([open]) summary::after { transform: rotate(-90deg); }
+.catgroup summary::-webkit-details-marker { display: none; }
+.catgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; padding-bottom: 12px; }
+.cat { border: 1.5px solid var(--line); background: var(--surface); border-radius: 14px; padding: 10px 6px; display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 12px; line-height: 1.2; text-align: center; min-height: 72px; }
+.cat .ico { font-size: 22px; }
+.cat.on { border-color: var(--accent); background: var(--accent-soft); font-weight: 600; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { border: 1.5px solid var(--line); background: var(--surface); border-radius: 99px; padding: 8px 14px; font-size: 14px; }
+.chip.on { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.chip.big { padding: 14px 22px; font-size: 17px; }
+.datepick { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; }
+#dateLabel { color: var(--accent); font-weight: 600; font-size: 14px; margin-left: 4px; align-self: center; }
+
+input.text, textarea.text { width: 100%; border: 1.5px solid var(--line); background: var(--surface); border-radius: 12px; padding: 12px; outline: 0; }
+input.text:focus, textarea.text:focus { border-color: var(--accent); }
+details.more summary { color: var(--accent); font-size: 14px; font-weight: 600; padding: 12px 0 4px; list-style: none; }
+details.more summary::-webkit-details-marker { display: none; }
+
+.savebar { position: sticky; bottom: 0; padding: 12px 0 calc(12px + env(safe-area-inset-bottom)); background: linear-gradient(transparent, var(--bg) 30%); }
+.primary { width: 100%; border: 0; border-radius: 14px; padding: 16px; background: var(--accent); color: var(--accent-ink); font-size: 17px; font-weight: 700; }
+.primary:active { transform: scale(.99); }
+.primary:disabled { opacity: .6; }
+
+.sum-head { display: flex; justify-content: space-between; align-items: baseline; }
+.sum-head h2 { font-size: 15px; margin: 0; }
+.sum-head small { color: var(--muted); font-size: 12px; }
+.big-num { font-size: 28px; font-weight: 800; font-variant-numeric: tabular-nums; margin-top: 8px; }
+.big-num small { font-size: 14px; font-weight: 500; color: var(--muted); }
+.track { position: relative; height: 8px; background: var(--chip); border-radius: 99px; overflow: visible; margin: 8px 0; }
+.bar { height: 100%; background: var(--accent); border-radius: 99px; transition: width .4s; }
+.bar.warn { background: var(--warn); }
+.bar.over { background: var(--bad); }
+.marker { position: absolute; top: -4px; width: 2px; height: 16px; background: var(--ink); opacity: .5; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+.stats div { background: var(--chip); border-radius: 12px; padding: 8px 10px; }
+.stats small { display: block; font-size: 11px; color: var(--muted); }
+.stats b { font-variant-numeric: tabular-nums; font-size: 15px; }
+.cb { margin: 10px 0; font-size: 14px; }
+.cb-top { display: flex; justify-content: space-between; gap: 8px; }
+.cb-top small { color: var(--muted); }
+.cb .track { height: 6px; margin: 5px 0 0; }
+.neg { color: var(--bad); font-weight: 600; }
+
+ul.recent { list-style: none; margin: 0; padding: 0; }
+ul.recent li { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+ul.recent li:first-child { border-top: 0; }
+ul.recent .ico { width: 36px; height: 36px; border-radius: 10px; background: var(--chip); display: grid; place-items: center; flex: none; }
+.r-main { flex: 1; min-width: 0; }
+.r-main b { display: block; font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.r-main small { color: var(--muted); font-size: 12px; }
+.r-amt { font-weight: 700; font-variant-numeric: tabular-nums; }
+li.empty { color: var(--muted); justify-content: center; }
+
+.setup { min-height: 100vh; display: flex; align-items: center; }
+.setup .card { padding: 24px; width: 100%; }
+.setup h1 { margin: 8px 0 4px; font-size: 24px; }
+.setup p { color: var(--muted); margin: 6px 0 16px; }
+.setup ol { color: var(--muted); padding-left: 20px; font-size: 14px; }
+.setup .logo { width: 56px; height: 56px; }
+.ms-btn { display: flex; align-items: center; justify-content: center; gap: 10px; }
+
+.toast { position: fixed; left: 50%; bottom: calc(88px + env(safe-area-inset-bottom)); transform: translate(-50%, 20px); opacity: 0; pointer-events: none;
+  background: #111827; color: #fff; padding: 12px 16px; border-radius: 12px; display: flex; gap: 14px; align-items: center; transition: .25s; z-index: 50; width: max-content; max-width: calc(100vw - 32px); font-size: 14px; }
+.toast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+.toast.error { background: var(--bad); }
+.toast button { border: 0; background: transparent; color: #5EEAD4; font-weight: 700; padding: 0; }
+dialog#menu { border: 0; border-radius: 18px; padding: 8px; background: var(--surface); color: var(--ink); width: min(340px, calc(100vw - 32px)); }
+dialog#menu::backdrop { background: rgba(0,0,0,.4); }
+dialog#menu button { display: block; width: 100%; text-align: left; border: 0; background: transparent; padding: 14px; border-radius: 10px; }
+dialog#menu button:active { background: var(--chip); }
+dialog#menu .danger { color: var(--bad); }
+.demo-banner { display: none; background: #FEF3C7; color: #92400E; font-size: 12px; text-align: center; padding: 6px; }
+body.demo .demo-banner { display: block; }
+</style>
+</head>
+<body>
+<div class="demo-banner">Demo mode: fake data, nothing is saved to Excel.</div>
+
+<!-- ============================== setup -->
+<section id="setup" class="screen setup" hidden>
+  <div class="wrap">
+    <div class="card">
+      <img class="logo" src="icon.svg" alt="">
+      <div class="setup-step" data-step="config">
+        <h1>Almost ready</h1>
+        <p>This copy of the app has no Microsoft app ID yet. Put the Application (client) ID in <code>config.js</code>; README_MOBILE.md has the steps.</p>
+      </div>
+      <div class="setup-step" data-step="signin">
+        <h1>Household Expenses</h1>
+        <p>Sign in with the Microsoft account the shared Excel file is shared with. You stay signed in on this phone.</p>
+        <button id="signinBtn" class="primary ms-btn" type="button">
+          <svg width="18" height="18" viewBox="0 0 21 21" aria-hidden="true"><path fill="#F25022" d="M0 0h10v10H0z"/><path fill="#7FBA00" d="M11 0h10v10H11z"/><path fill="#00A4EF" d="M0 11h10v10H0z"/><path fill="#FFB900" d="M11 11h10v10H11z"/></svg>
+          Sign in with Microsoft</button>
+      </div>
+      <div class="setup-step" data-step="link">
+        <h1>Connect the Excel file</h1>
+        <p>Paste the OneDrive link to <b>Household_Expenses.xlsx</b>.</p>
+        <ol><li>In OneDrive, open the file's <b>Share</b> menu (or find it under <b>Shared</b>).</li><li>Tap <b>Copy link</b> and paste it below.</li></ol>
+        <input id="linkInput" class="text" type="url" placeholder="https://1drv.ms/x/…" autocomplete="off">
+        <div style="height:12px"></div>
+        <button id="linkBtn" class="primary" type="button">Connect</button>
+      </div>
+      <div class="setup-step" data-step="who">
+        <h1>Who's using this phone?</h1>
+        <p>Used as the default "Paid by". You can still change it on each entry.</p>
+        <div id="whoList" class="chips"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== main -->
+<section id="main" class="screen" hidden>
+  <header class="top">
+    <div class="wrap">
+      <h1>Expenses <small id="who"></small></h1>
+      <span id="sync" class="sync">Synced</span>
+      <button id="refreshBtn" class="iconbtn" type="button" aria-label="Refresh">⟳</button>
+      <button id="menuBtn" class="iconbtn" type="button" aria-label="Menu">☰</button>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <form id="entryForm" class="card" autocomplete="off">
+      <div class="mode" role="tablist">
+        <button type="button" data-mode="expense" class="on">Expense</button>
+        <button type="button" data-mode="income">Income</button>
+      </div>
+
+      <div class="amount"><span>LKR</span><input id="amount" inputmode="decimal" placeholder="0" aria-label="Amount"></div>
+
+      <label class="lbl">Date</label>
+      <div id="dateChips" class="chips">
+        <button type="button" class="chip on" data-d="today">Today</button>
+        <button type="button" class="chip" data-d="yesterday">Yesterday</button>
+        <button type="button" class="chip" data-d="pick">📅 Pick</button>
+        <span id="dateLabel"></span>
+        <input id="datePick" class="datepick" type="date" aria-label="Pick a date">
+      </div>
+
+      <div id="expenseFields">
+        <label class="lbl">Category</label>
+        <div id="cats"></div>
+        <label class="lbl" for="desc">What was it?</label>
+        <input id="desc" class="text" list="descList" placeholder="e.g. Keells weekly shop" maxlength="120">
+        <datalist id="descList"></datalist>
+        <label class="lbl">Paid by</label>
+        <div id="paidBy" class="chips"></div>
+        <details class="more">
+          <summary>+ Payment method &amp; notes</summary>
+          <label class="lbl">Payment method</label>
+          <div id="method" class="chips"></div>
+          <label class="lbl" for="notes">Notes</label>
+          <input id="notes" class="text" maxlength="200">
+        </details>
+      </div>
+
+      <div id="incomeFields" hidden>
+        <label class="lbl">Whose income</label>
+        <div id="person" class="chips"></div>
+        <label class="lbl">Source</label>
+        <div id="source" class="chips"></div>
+        <label class="lbl" for="incNotes">Notes</label>
+        <input id="incNotes" class="text" maxlength="200">
+      </div>
+
+      <div class="savebar"><button id="saveBtn" class="primary" type="submit">Save expense</button></div>
+    </form>
+
+    <section class="card">
+      <div class="sum-head"><h2 id="sumMonth">This month</h2><small id="updated"></small></div>
+      <div class="big-num"><span id="sumSpent">0</span> <small>of <span id="sumBudget">0</span> budget</small></div>
+      <div class="track"><div id="sumBar" class="bar" style="width:0"></div><div id="sumMarker" class="marker" title="Today"></div></div>
+      <div class="stats">
+        <div><small>Income</small><b id="sumIncome">0</b></div>
+        <div><small>Saved</small><b id="sumSaved">0</b></div>
+        <div><small>Left over</small><b id="sumLeft">0</b></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="sum-head"><h2>Everyday budgets</h2><small>this month</small></div>
+      <div id="catBudgets"></div>
+    </section>
+
+    <section class="card">
+      <div class="sum-head"><h2>Recent</h2></div>
+      <ul id="recent" class="recent"></ul>
+    </section>
+  </div>
+</section>
+
+<dialog id="menu">
+  <button id="mWho" type="button">👤 Change who's using this phone</button>
+  <button id="mLink" type="button">🔗 Connect a different Excel file</button>
+  <button id="mOut" type="button" class="danger">↩ Sign out</button>
+</dialog>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
